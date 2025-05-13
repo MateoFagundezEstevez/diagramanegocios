@@ -18,19 +18,32 @@ try:
     net.force_atlas_2based(gravity=-50)
 
     for _, row in df.iterrows():
-        persona = row["Nombre"]
-        pais = row["País de interés"]
-        organizacion = row["Organización"]
+        titulo = row["TITULO"]
+        persona = row["NOMBRE"]
+        pais = row["PAIS DE INTERÉS"]
+        organizacion = row["Empresa u organización"]
+        mail = row["MAIL"]
+        telefono = row["TELÉFONO"]
+        
+        # Crear nodos para cada contacto
+        net.add_node(persona, label=persona, shape="dot", color="#007bff", title=f"{titulo} {persona} - {organizacion} ({pais})")
 
-        net.add_node(persona, label=persona, shape="dot", color="#007bff", title=f"{organizacion} ({pais})")
-
+        # Añadir nodo para país
         if pd.notna(pais):
             net.add_node(pais, label=pais, shape="ellipse", color="#28a745")
             net.add_edge(persona, pais)
 
+        # Añadir nodo para organización
         if pd.notna(organizacion):
             net.add_node(organizacion, label=organizacion, shape="box", color="#ffc107")
             net.add_edge(persona, organizacion)
+
+        # Si deseas añadir interacciones adicionales con el mail o teléfono, puedes hacerlo aquí.
+        # Ejemplo: Agregar el correo electrónico y el teléfono al título del nodo
+        if pd.notna(mail) or pd.notna(telefono):
+            contact_info = f"Correo: {mail}<br>Teléfono: {telefono}"
+            net.add_node(f"{persona}_contact", label="Contacto", shape="diamond", color="#6f42c1", title=contact_info)
+            net.add_edge(persona, f"{persona}_contact")
 
     # Guardar grafo en archivo temporal
     with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp_file:
