@@ -1,3 +1,4 @@
 pyvis
 streamlit
 pandas
+pip install folium
