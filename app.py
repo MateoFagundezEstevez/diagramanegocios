@@ -4,8 +4,10 @@ from pyvis.network import Network
 import streamlit.components.v1 as components
 import tempfile
 import os
+import folium
+from folium.plugins import MarkerCluster
 
-st.set_page_config(page_title="Red de Contactos", layout="wide")
+st.set_page_config(page_title="Red de Contactos por País u Organización", layout="wide")
 st.title("🔗 Red de Contactos por País u Organización")
 
 # Leer el archivo CONTACTOS.csv directamente
@@ -13,11 +15,13 @@ try:
     df = pd.read_csv("CONTACTOS.csv")
     st.success("✅ Archivo 'CONTACTOS.csv' cargado correctamente.")
 
-    # Crear grafo
-    net = Network(height="700px", width="100%", bgcolor="#ffffff", font_color="black")
-    net.force_atlas_2based(gravity=-50)
+    # Crear mapa mundi centrado en el mapa global
+    m = folium.Map(location=[20, 0], zoom_start=2, tiles="Stamen Terrain")
 
-    # Colores distintos por país
+    # Crear un marcador de agrupación
+    marker_cluster = MarkerCluster().add_to(m)
+
+    # Definir colores para los países
     pais_colores = {
         "Uruguay": "#28a745",  # Verde
         "Colombia": "#007bff",  # Azul
@@ -25,6 +29,19 @@ try:
         "Brasil": "#dc3545",  # Rojo
         # Añadir más países y colores si es necesario
     }
+
+    # Asumir que tienes coordenadas aproximadas para los países
+    pais_coordenadas = {
+        "Uruguay": [-32.5228, -55.7658],
+        "Colombia": [4.5709, -74.2973],
+        "Argentina": [-38.4161, -63.6167],
+        "Brasil": [-14.2350, -51.9253],
+        # Añadir más países con sus coordenadas
+    }
+
+    # Crear un grafo en PyVis
+    net = Network(height="700px", width="100%", bgcolor="#ffffff", font_color="black")
+    net.force_atlas_2based(gravity=-50)
 
     for _, row in df.iterrows():
         titulo = row["TITULO"]
@@ -37,15 +54,23 @@ try:
         # Asignar color basado en el país
         color_pais = pais_colores.get(pais, "#6c757d")  # Gris si el país no está en el diccionario
 
-        # Crear nodos para cada contacto
+        # Crear un nodo para cada persona en el grafo de PyVis
         net.add_node(persona, label=persona, shape="dot", color=color_pais, title=f"{titulo} {persona} - {organizacion} ({pais})")
 
-        # Añadir nodo para país si no existe
+        # Agregar los contactos al mapa mundi
+        if pais in pais_coordenadas:
+            lat, lon = pais_coordenadas[pais]
+            folium.Marker(
+                location=[lat, lon],
+                popup=f"{persona}<br>{organizacion}<br>{mail}<br>{telefono}",
+                icon=folium.Icon(color=color_pais)
+            ).add_to(marker_cluster)
+
+        # Crear nodos para país y organización en el grafo
         if pd.notna(pais):
             net.add_node(pais, label=pais, shape="ellipse", color=color_pais)
             net.add_edge(persona, pais)
 
-        # Añadir nodo para organización si existe
         if pd.notna(organizacion):
             net.add_node(organizacion, label=organizacion, shape="box", color="#ffc107")
             net.add_edge(persona, organizacion)
@@ -56,12 +81,16 @@ try:
             net.add_node(f"{persona}_contact", label="Contacto", shape="diamond", color="#6f42c1", title=contact_info)
             net.add_edge(persona, f"{persona}_contact")
 
-    # Guardar grafo en archivo temporal
+    # Guardar grafo de PyVis en archivo temporal
     with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp_file:
         net.save_graph(tmp_file.name)
         html_path = tmp_file.name
 
-    # Incrustar HTML en Streamlit
+    # Incrustar el mapa y el grafo en Streamlit
+    st.subheader("🌍 Mapa Mundial de Contactos")
+    folium_static(m)
+
+    st.subheader("📊 Red de Contactos")
     with open(html_path, 'r', encoding='utf-8') as f:
         html_content = f.read()
         components.html(html_content, height=700, scrolling=True)
