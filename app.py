@@ -8,10 +8,10 @@ import os
 st.set_page_config(page_title="Red de Contactos", layout="wide")
 st.title("🔗 Red de Contactos por País u Organización")
 
-# Cargar el archivo directamente del repositorio
+# Leer el archivo CONTACTOS.csv directamente
 try:
-    df = pd.read_csv("contactos.csv")
-    st.success("✅ Archivo 'contactos.csv' cargado correctamente.")
+    df = pd.read_csv("CONTACTOS.csv")
+    st.success("✅ Archivo 'CONTACTOS.csv' cargado correctamente.")
 
     # Crear grafo
     net = Network(height="700px", width="100%", bgcolor="#ffffff", font_color="black")
@@ -32,12 +32,12 @@ try:
             net.add_node(organizacion, label=organizacion, shape="box", color="#ffc107")
             net.add_edge(persona, organizacion)
 
-    # Guardar HTML temporal
+    # Guardar grafo en archivo temporal
     with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp_file:
         net.save_graph(tmp_file.name)
         html_path = tmp_file.name
 
-    # Mostrar grafo en Streamlit
+    # Incrustar HTML en Streamlit
     with open(html_path, 'r', encoding='utf-8') as f:
         html_content = f.read()
         components.html(html_content, height=700, scrolling=True)
@@ -45,6 +45,6 @@ try:
     os.remove(html_path)
 
 except FileNotFoundError:
-    st.error("❌ No se encontró el archivo 'contactos.csv' en el repositorio.")
+    st.error("❌ No se encontró el archivo 'CONTACTOS.csv' en el repositorio.")
 except Exception as e:
     st.error(f"⚠️ Error al procesar el archivo: {e}")
