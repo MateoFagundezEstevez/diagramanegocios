@@ -17,6 +17,15 @@ try:
     net = Network(height="700px", width="100%", bgcolor="#ffffff", font_color="black")
     net.force_atlas_2based(gravity=-50)
 
+    # Colores distintos por país
+    pais_colores = {
+        "Uruguay": "#28a745",  # Verde
+        "Colombia": "#007bff",  # Azul
+        "Argentina": "#ffc107",  # Amarillo
+        "Brasil": "#dc3545",  # Rojo
+        # Añadir más países y colores si es necesario
+    }
+
     for _, row in df.iterrows():
         titulo = row["TITULO"]
         persona = row["NOMBRE"]
@@ -24,22 +33,24 @@ try:
         organizacion = row["Empresa u organización"]
         mail = row["MAIL"]
         telefono = row["TELÉFONO"]
-        
-        # Crear nodos para cada contacto
-        net.add_node(persona, label=persona, shape="dot", color="#007bff", title=f"{titulo} {persona} - {organizacion} ({pais})")
 
-        # Añadir nodo para país
+        # Asignar color basado en el país
+        color_pais = pais_colores.get(pais, "#6c757d")  # Gris si el país no está en el diccionario
+
+        # Crear nodos para cada contacto
+        net.add_node(persona, label=persona, shape="dot", color=color_pais, title=f"{titulo} {persona} - {organizacion} ({pais})")
+
+        # Añadir nodo para país si no existe
         if pd.notna(pais):
-            net.add_node(pais, label=pais, shape="ellipse", color="#28a745")
+            net.add_node(pais, label=pais, shape="ellipse", color=color_pais)
             net.add_edge(persona, pais)
 
-        # Añadir nodo para organización
+        # Añadir nodo para organización si existe
         if pd.notna(organizacion):
             net.add_node(organizacion, label=organizacion, shape="box", color="#ffc107")
             net.add_edge(persona, organizacion)
 
-        # Si deseas añadir interacciones adicionales con el mail o teléfono, puedes hacerlo aquí.
-        # Ejemplo: Agregar el correo electrónico y el teléfono al título del nodo
+        # Agregar el correo electrónico y teléfono al título del nodo
         if pd.notna(mail) or pd.notna(telefono):
             contact_info = f"Correo: {mail}<br>Teléfono: {telefono}"
             net.add_node(f"{persona}_contact", label="Contacto", shape="diamond", color="#6f42c1", title=contact_info)
